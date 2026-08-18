@@ -1,0 +1,239 @@
+# ============================================================================
+# companies.yaml - the target list
+#
+# tier 0 = FAANG+ and frontier AI labs         -> HOT lane, polled every ~3 min
+# tier 1 = big tech / top quant / top startups -> HOT lane
+# tier 2 = strong mid-size                     -> COLD lane, ~30 min
+# tier 3 = volume / long tail                  -> COLD lane
+#
+# Every token in this file was verified against the live API on 2026-08-17.
+# They still drift - companies switch ATS mid-cycle - so re-run
+# `python -m radar verify` every couple of weeks and after any `doctor`
+# report shows a board going quiet.
+#
+# `enabled: false` entries are boards with NO working public JSON endpoint as
+# of the last sweep. They are kept here, documented, so a real gap never
+# looks like an oversight. Each one names what it actually runs on; if you
+# want it back, find the token with `python -m radar discover <slug>`.
+# ============================================================================
+
+companies:
+
+  # ------------------------------------------------------------------ TIER 0
+  - {name: Amazon,      ats: amazon,     tier: 0, search: "intern"}
+  # Apple's search ignores "intern" and returns the whole corpus; "internship"
+  # is the query that actually filters. Don't change this without re-testing.
+  - {name: Apple,       ats: apple,      tier: 0, search: "internship"}
+  - {name: Anthropic,   ats: greenhouse, tier: 0, token: anthropic}
+  - {name: OpenAI,      ats: ashby,      tier: 0, token: openai}
+  - {name: Databricks,  ats: greenhouse, tier: 0, token: databricks}
+  - {name: NVIDIA,      ats: workday,    tier: 0, tenant: nvidia, dc: wd5, site: NVIDIAExternalCareerSite}
+
+  # Google's careers results page is server-rendered, so the `google` adapter
+  # reads job ids + slugs straight out of the HTML. No JS engine needed.
+  - {name: Google,      ats: google,     tier: 0, search: "intern"}
+
+  # Meta has no search API. The `meta` adapter diffs metacareers.com's job
+  # sitemap (~840 live reqs, one request) and only opens detail pages it has
+  # never seen, reading the schema.org JobPosting block. The first few hours
+  # backfill at max_hydrate reqs per poll, then it settles to 1 request.
+  - {name: Meta,        ats: meta,       tier: 0, max_hydrate: 25}
+
+  # Netflix runs on Eightfold.
+  - {name: Netflix,     ats: eightfold,  tier: 0, host: explore.jobs.netflix.net, domain: netflix.com, search: "intern"}
+
+  # Microsoft: NO WORKING PUBLIC BOARD as of Aug 2026. They retired
+  # gcsservices.careers.microsoft.com (its TLS cert no longer covers the
+  # hostname) and moved to an Eightfold tenant at apply.careers.microsoft.com
+  # whose API rejects anonymous callers ("Not authorized for PCSX"). Use
+  # Microsoft's own email job alerts as the stopgap - this is the single
+  # biggest coverage gap in the file.
+  - {name: Microsoft,   ats: microsoft,  tier: 0, enabled: false}
+
+  # ------------------------------------------------------------------ TIER 1
+  # Big tech & infra
+  - {name: Stripe,      ats: greenhouse, tier: 1, token: stripe}
+  - {name: Airbnb,      ats: greenhouse, tier: 1, token: airbnb}
+  - {name: Snowflake,   ats: ashby,      tier: 1, token: snowflake}
+  - {name: Cloudflare,  ats: greenhouse, tier: 1, token: cloudflare}
+  - {name: Datadog,     ats: greenhouse, tier: 1, token: datadog}
+  - {name: MongoDB,     ats: greenhouse, tier: 1, token: mongodb}
+  - {name: Confluent,   ats: ashby,      tier: 1, token: confluent}
+  - {name: Dropbox,     ats: greenhouse, tier: 1, token: dropbox}
+  - {name: Pinterest,   ats: greenhouse, tier: 1, token: pinterest}
+  - {name: Reddit,      ats: greenhouse, tier: 1, token: reddit}
+  - {name: Discord,     ats: greenhouse, tier: 1, token: discord}
+  - {name: Roblox,      ats: greenhouse, tier: 1, token: roblox}
+  - {name: DoorDash,    ats: greenhouse, tier: 1, token: doordashusa}
+  - {name: Instacart,   ats: greenhouse, tier: 1, token: instacart}
+  - {name: Lyft,        ats: greenhouse, tier: 1, token: lyft}
+  - {name: Coinbase,    ats: greenhouse, tier: 1, token: coinbase}
+  - {name: Robinhood,   ats: greenhouse, tier: 1, token: robinhood}
+  - {name: Figma,       ats: greenhouse, tier: 1, token: figma}
+  - {name: Notion,      ats: ashby,      tier: 1, token: notion}
+  - {name: Asana,       ats: greenhouse, tier: 1, token: asana}
+  - {name: Airtable,    ats: greenhouse, tier: 1, token: airtable}
+  - {name: Palantir,    ats: lever,      tier: 1, token: palantir}
+  - {name: Samsara,     ats: greenhouse, tier: 1, token: samsara}
+  - {name: Verkada,     ats: greenhouse, tier: 1, token: verkada}
+  - {name: Anduril,     ats: greenhouse, tier: 1, token: andurilindustries}
+  - {name: Applied Intuition, ats: ashby, tier: 1, token: applied}
+  - {name: Waymo,       ats: greenhouse, tier: 1, token: waymo}
+  - {name: Plaid,       ats: ashby,      tier: 1, token: plaid}
+  - {name: Brex,        ats: greenhouse, tier: 1, token: brex}
+  - {name: Affirm,      ats: greenhouse, tier: 1, token: affirm}
+  - {name: Vercel,      ats: greenhouse, tier: 1, token: vercel}
+
+  # Rippling (Ashby "rippling") and Retool (Greenhouse "retool") both 404 now
+  # and their careers pages are client-rendered, so the token isn't in the
+  # HTML. Re-check with `discover` if you want them back.
+  - {name: Rippling,    ats: ashby,      tier: 1, token: rippling, enabled: false}
+  - {name: Retool,      ats: greenhouse, tier: 1, token: retool, enabled: false}
+
+  # Frontier AI / ML infra - highest MLE density
+  - {name: Scale AI,    ats: greenhouse, tier: 1, token: scaleai}
+  - {name: Perplexity,  ats: ashby,      tier: 1, token: perplexity}
+  - {name: Cohere,      ats: ashby,      tier: 1, token: cohere}
+  - {name: Hugging Face, ats: workable,  tier: 1, token: huggingface}
+  - {name: Cerebras,    ats: ashby,      tier: 1, token: cerebras}
+  - {name: Together AI, ats: greenhouse, tier: 1, token: togetherai}
+  - {name: Runway,      ats: ashby,      tier: 1, token: runway}
+  - {name: Glean,       ats: greenhouse, tier: 1, token: gleanwork}
+  - {name: Sierra AI,   ats: ashby,      tier: 1, token: sierra}
+  - {name: Harvey,      ats: ashby,      tier: 1, token: harvey}
+  - {name: LangChain,   ats: ashby,      tier: 1, token: langchain}
+  # Groq and W&B are not on any of the five public JSON ATSs under any slug
+  # tried; both careers pages are client-rendered.
+  - {name: Groq,        ats: greenhouse, tier: 1, token: groq, enabled: false}
+  - {name: Weights & Biases, ats: ashby, tier: 1, token: wandb, enabled: false}
+
+  # Quant / trading - pays the most, moves the fastest, closes first
+  - {name: Hudson River Trading, ats: greenhouse, tier: 1, token: hrttalentcommunity}
+  - {name: Jump Trading, ats: greenhouse, tier: 1, token: jumptrading}
+  - {name: Optiver,     ats: greenhouse, tier: 1, token: optiverus}
+  - {name: IMC Trading, ats: greenhouse, tier: 1, token: imc}
+  - {name: Point72,     ats: greenhouse, tier: 1, token: point72}
+  - {name: Akuna Capital, ats: greenhouse, tier: 1, token: akunacapital}
+  - {name: Old Mission Capital, ats: greenhouse, tier: 1, token: oldmissioncapital}
+  - {name: Belvedere Trading, ats: lever, tier: 1, token: belvederetrading}
+  - {name: DRW,         ats: greenhouse, tier: 1, token: drweng}
+  - {name: Five Rings,  ats: greenhouse, tier: 1, token: fiveringsllc}
+  - {name: Squarepoint, ats: greenhouse, tier: 1, token: squarepointcapital}
+  # Jane Street's role list lives in /jobs/main.json. Titles arrive with Lisu
+  # homoglyphs swapped in for Latin capitals; the adapter folds them back.
+  - {name: Jane Street, ats: janestreet, tier: 1}
+  - name: D. E. Shaw
+    ats: html
+    tier: 1
+    url: "https://www.deshaw.com/careers/choose-your-path"
+    link_pattern: "/careers/"
+    base: "https://www.deshaw.com"
+  # Citadel and Citadel Securities run their own portal; no public JSON board
+  # under any slug tried. Worth checking by hand - they close fast.
+  - {name: Citadel,     ats: greenhouse, tier: 1, token: citadel, enabled: false}
+  - {name: Citadel Securities, ats: greenhouse, tier: 1, token: citadelsecurities, enabled: false}
+
+  # Workday enterprises
+  - {name: Salesforce,  ats: workday, tier: 1, tenant: salesforce, dc: wd12, site: External_Career_Site}
+  - {name: Adobe,       ats: workday, tier: 1, tenant: adobe,      dc: wd5,  site: external_experienced}
+  - {name: PayPal,      ats: workday, tier: 1, tenant: paypal,     dc: wd1,  site: jobs}
+  - {name: Capital One, ats: workday, tier: 1, tenant: capitalone, dc: wd12, site: Capital_One}
+  - {name: Workday,     ats: workday, tier: 2, tenant: workday,    dc: wd5,  site: Workday}
+  - {name: Mastercard,  ats: workday, tier: 2, tenant: mastercard, dc: wd1,  site: CorporateCareers}
+  - {name: Dell,        ats: workday, tier: 2, tenant: dell,       dc: wd1,  site: External}
+  # These four answer 401/422 on every tenant+site combination tried, i.e.
+  # the coordinates below are stale. Find the real ones by opening their
+  # careers site and reading <TENANT>.wdN.myworkdayjobs.com/en-US/<SITE>.
+  - {name: Intuit,      ats: workday, tier: 1, tenant: intuit,   dc: wd1, site: usjobs,   enabled: false}
+  - {name: Qualcomm,    ats: workday, tier: 1, tenant: qualcomm, dc: wd5, site: External, enabled: false}
+  - {name: Visa,        ats: workday, tier: 1, tenant: visa,     dc: wd1, site: Jobs,     enabled: false}
+  # AMD moved to iCIMS, Cisco to Phenom - neither has a public JSON board.
+  - {name: AMD,         ats: workday, tier: 1, tenant: amd,   dc: wd1, site: external, enabled: false}
+  - {name: Cisco,       ats: workday, tier: 2, tenant: cisco, dc: wd1, site: at_cisco, enabled: false}
+
+  # ------------------------------------------------------------------ TIER 2
+  - {name: Twilio,      ats: greenhouse, tier: 2, token: twilio}
+  - {name: Okta,        ats: greenhouse, tier: 2, token: okta}
+  - {name: Duolingo,    ats: greenhouse, tier: 2, token: duolingo}
+  - {name: Squarespace, ats: greenhouse, tier: 2, token: squarespace}
+  - {name: Wayfair,     ats: smartrecruiters, tier: 2, token: wayfair}
+  - {name: Chime,       ats: greenhouse, tier: 2, token: chime}
+  - {name: Flexport,    ats: greenhouse, tier: 2, token: flexport}
+  - {name: Benchling,   ats: ashby,      tier: 2, token: benchling}
+  - {name: Sigma Computing, ats: greenhouse, tier: 2, token: sigmacomputing}
+  - {name: Starburst,   ats: greenhouse, tier: 2, token: starburst}
+  - {name: Fivetran,    ats: greenhouse, tier: 2, token: fivetran}
+  - {name: Sourcegraph, ats: greenhouse, tier: 2, token: sourcegraph91}
+  - {name: Postman,     ats: greenhouse, tier: 2, token: postman}
+  - {name: Zscaler,     ats: greenhouse, tier: 2, token: zscaler}
+  - {name: CrowdStrike, ats: workday,    tier: 2, tenant: crowdstrike, dc: wd5, site: crowdstrikecareers}
+  - {name: Wiz,         ats: greenhouse, tier: 2, token: wizinc}
+  - {name: Gusto,       ats: greenhouse, tier: 2, token: gusto}
+  - {name: Deel,        ats: ashby,      tier: 2, token: deel}
+  - {name: Linear,      ats: ashby,      tier: 2, token: linear}
+  - {name: Mercury,     ats: greenhouse, tier: 2, token: mercury}
+  - {name: Vanta,       ats: ashby,      tier: 2, token: vanta}
+  - {name: Clay,        ats: ashby,      tier: 2, token: claylabs}
+  - {name: Abridge,     ats: ashby,      tier: 2, token: abridge}
+  - {name: Zip,         ats: ashby,      tier: 2, token: zip}
+  - {name: Attentive,   ats: greenhouse, tier: 2, token: attentive}
+  - {name: Klaviyo,     ats: greenhouse, tier: 2, token: klaviyo}
+  - {name: HubSpot,     ats: greenhouse, tier: 2, token: hubspotjobs}
+  - {name: Zillow,      ats: workday,    tier: 2, tenant: zillow, dc: wd5, site: Zillow_Group_External}
+  - {name: Etsy,        ats: workday,    tier: 2, tenant: etsy,   dc: wd5, site: Etsy_Careers}
+  - {name: Nextdoor,    ats: greenhouse, tier: 2, token: nextdoor}
+  - {name: Peloton,     ats: greenhouse, tier: 2, token: peloton}
+  - {name: Wealthfront, ats: lever,      tier: 2, token: wealthfront}
+  - {name: SoFi,        ats: greenhouse, tier: 2, token: sofi}
+  - {name: Marqeta,     ats: greenhouse, tier: 2, token: marqeta}
+  - {name: Blend,       ats: greenhouse, tier: 2, token: blend}
+  - {name: Rubrik,      ats: greenhouse, tier: 2, token: rubrik}
+  - {name: Zoox,        ats: lever,      tier: 2, token: zoox}
+  - {name: Nuro,        ats: greenhouse, tier: 2, token: nuro}
+  - {name: Lucid Motors, ats: greenhouse, tier: 2, token: lucidmotors}
+  - {name: Relativity Space, ats: greenhouse, tier: 2, token: relativity}
+  - {name: Astranis,    ats: greenhouse, tier: 2, token: astranis}
+  - {name: Shield AI,   ats: lever,      tier: 2, token: shieldai}
+  - {name: Vannevar Labs, ats: greenhouse, tier: 2, token: vannevarlabs}
+  - {name: Instabase,   ats: greenhouse, tier: 2, token: instabase}
+  - {name: Arize AI,    ats: greenhouse, tier: 2, token: arizeai}
+  - {name: Modal,       ats: ashby,      tier: 2, token: modal}
+  - {name: Baseten,     ats: ashby,      tier: 2, token: baseten}
+  - {name: Anyscale,    ats: ashby,      tier: 2, token: anyscale}
+  - {name: Chroma,      ats: ashby,      tier: 2, token: trychroma}
+  - {name: Pinecone,    ats: ashby,      tier: 2, token: pinecone}
+  # No public JSON board found under any tried slug (all client-rendered
+  # careers pages). Redfin + Yelp are on Phenom, Rivian on iCIMS - neither
+  # platform exposes an anonymous JSON search endpoint.
+  - {name: Grammarly,   ats: greenhouse, tier: 2, token: grammarly, enabled: false}
+  - {name: Unity,       ats: greenhouse, tier: 2, token: unity, enabled: false}
+  - {name: Snyk,        ats: greenhouse, tier: 2, token: snyk, enabled: false}
+  - {name: Nutanix,     ats: greenhouse, tier: 2, token: nutanix, enabled: false}
+  - {name: Cohesity,    ats: greenhouse, tier: 2, token: cohesity, enabled: false}
+  - {name: dbt Labs,    ats: greenhouse, tier: 2, token: dbtlabs, enabled: false}
+  - {name: Redfin,      ats: greenhouse, tier: 2, token: redfin, enabled: false}
+  - {name: Yelp,        ats: greenhouse, tier: 2, token: yelp, enabled: false}
+  - {name: Rivian,      ats: greenhouse, tier: 2, token: rivian, enabled: false}
+
+  # ------------------------------------------------------------------ TIER 3
+  - {name: Nasdaq,      ats: workday,    tier: 3, tenant: nasdaq, dc: wd1, site: Global_External_Site}
+  - {name: Tempus,      ats: workday,    tier: 3, tenant: tempus, dc: wd5, site: Tempus_Careers}
+  - {name: Verily,      ats: workday,    tier: 3, tenant: verily, dc: wd1, site: Verily_Careers}
+  - {name: Toast,       ats: greenhouse, tier: 3, token: toast}
+  - {name: Braze,       ats: greenhouse, tier: 3, token: braze}
+  - {name: Amplitude,   ats: greenhouse, tier: 3, token: amplitude}
+  - {name: Airbyte,     ats: ashby,      tier: 3, token: airbyte}
+  - {name: Temporal,    ats: greenhouse, tier: 3, token: temporaltechnologies}
+  - {name: Grafana Labs, ats: greenhouse, tier: 3, token: grafanalabs}
+  - {name: Cockroach Labs, ats: greenhouse, tier: 3, token: cockroachlabs}
+  - {name: Neon,        ats: ashby,      tier: 3, token: neon}
+  - {name: Supabase,    ats: ashby,      tier: 3, token: supabase}
+  - {name: Render,      ats: ashby,      tier: 3, token: render}
+  - {name: Replit,      ats: ashby,      tier: 3, token: replit}
+  - {name: Cresta,      ats: greenhouse, tier: 3, token: cresta}
+  - {name: Observe AI,  ats: greenhouse, tier: 3, token: observeai}
+  - {name: Recursion,   ats: greenhouse, tier: 3, token: recursionpharmaceuticals}
+  # Workday coordinates stale; 404/422 on every combination tried.
+  - {name: Bloomberg,   ats: workday, tier: 3, tenant: bloomberg,    dc: wd1, site: Bloomberg_Careers, enabled: false}
+  - {name: Goldman Sachs, ats: workday, tier: 3, tenant: goldmansachs, dc: wd5, site: GS_EXTERNAL, enabled: false}
+  - {name: American Express, ats: workday, tier: 3, tenant: aexp,    dc: wd1, site: AmericanExpress, enabled: false}

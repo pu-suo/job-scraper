@@ -1,0 +1,86 @@
+# ============================================================================
+# config.yaml
+# ============================================================================
+
+database: radar.db
+
+# ------------------------------------------------------------------ filters
+filters:
+  roles: [MLE, SWE, DE]
+
+  # Keep postings that say "Summer Internship" with no year. During the
+  # Aug 2026 - Feb 2027 window these are almost always Summer 2027, and
+  # missing one costs far more than skimming a false positive.
+  allow_unknown_year: true
+
+  # Fall/Winter/Spring 2027 co-ops. Off by default.
+  allow_offseason: false
+
+  # 0.0 = firehose, 0.75 = only explicit "Summer 2027 SWE Intern" titles.
+  # 0.45 is a good starting point: catches nearly everything real,
+  # filters most noise. Tune with `python -m radar test "<some title>"`.
+  min_confidence: 0.45
+
+  # Empty/absent = US + Canada + Remote. Set explicitly to narrow, e.g.
+  # allowed_regions: ["Seattle", "New York", "Remote", "Bay Area"]
+  allowed_regions: []
+
+# ------------------------------------------------------------------ polling
+polling:
+  hot_interval_seconds: 180      # tier 0-1: every 3 min. This is your edge.
+  cold_interval_seconds: 1800    # tier 2-3: every 30 min
+  digest_interval_seconds: 3600  # batch tier 2-3 alerts hourly
+  concurrency: 8                 # simultaneous HTTP requests. Don't raise
+                                 # this much - you'll get rate-limited, and
+                                 # a 429 costs you more than it saves.
+  timeout_seconds: 25
+
+# ------------------------------------------------------------- notifications
+notify:
+  # Tier <= this fires an INSTANT, loud alert. Everything above is batched
+  # into the hourly digest. This is how you get FAANG urgency without your
+  # phone buzzing 60 times a day.
+  urgent_max_tier: 1
+
+  # --- ntfy.sh: easiest possible phone push. No account needed.
+  #     1. Install the ntfy app (iOS/Android)
+  #     2. Subscribe to a topic - make it long and random, it's your only
+  #        secret. Anyone who guesses the topic sees your alerts.
+  #     3. Paste the same string below.
+  ntfy:
+    enabled: false
+    topic: "intern-radar-CHANGE-THIS-TO-SOMETHING-RANDOM-9f3a2b"
+    server: "https://ntfy.sh"
+
+  # --- Discord: Server Settings > Integrations > Webhooks > New Webhook
+  discord:
+    enabled: false
+    webhook_url: ""
+
+  slack:
+    enabled: false
+    webhook_url: ""
+
+  # --- Telegram: message @BotFather to create a bot, then get your chat_id
+  #     from https://api.telegram.org/bot<TOKEN>/getUpdates
+  telegram:
+    enabled: false
+    bot_token: ""
+    chat_id: ""
+
+  # --- Email. For Gmail use an App Password, not your real password.
+  #     Better: leave smtp_password blank and export RADAR_SMTP_PASSWORD.
+  email:
+    enabled: false
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_user: ""
+    smtp_password: ""
+    from_addr: ""
+    to_addr: ""
+
+  desktop:
+    enabled: false
+
+  console:
+    enabled: true

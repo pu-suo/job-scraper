@@ -1,0 +1,69 @@
+name: intern radar
+
+# GitHub's cron minimum is 5 minutes and it is frequently delayed by 5-15
+# minutes under load, so this is your *fallback*, not your fast path. For
+# true 3-minute latency run `python -m radar watch` on an always-on machine
+# (a $5 VPS, a Raspberry Pi, or an old laptop in a drawer).
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: radar
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Restore the dedupe DB so you don't get re-notified about every
+      # posting on every run. Without this the first run of each cycle
+      # would re-alert on all ~100 live postings.
+      - name: Restore state
+        uses: actions/cache/restore@v4
+        with:
+          path: radar.db
+          key: radar-db-${{ github.run_id }}
+          restore-keys: radar-db-
+
+      - name: Poll
+        env:
+          RADAR_SMTP_PASSWORD: ${{ secrets.RADAR_SMTP_PASSWORD }}
+          RADAR_NTFY_TOPIC: ${{ secrets.RADAR_NTFY_TOPIC }}
+          RADAR_DISCORD_WEBHOOK: ${{ secrets.RADAR_DISCORD_WEBHOOK }}
+        run: |
+          # Inject secrets into config so nothing sensitive is committed.
+          python - <<'PY'
+          import os, yaml
+          c = yaml.safe_load(open("config.yaml"))
+          n = c.setdefault("notify", {})
+          if os.environ.get("RADAR_NTFY_TOPIC"):
+              n.setdefault("ntfy", {}).update(
+                  enabled=True, topic=os.environ["RADAR_NTFY_TOPIC"])
+          if os.environ.get("RADAR_DISCORD_WEBHOOK"):
+              n.setdefault("discord", {}).update(
+                  enabled=True, webhook_url=os.environ["RADAR_DISCORD_WEBHOOK"])
+          yaml.safe_dump(c, open("config.yaml", "w"), sort_keys=False)
+          PY
+          python -m radar run --lane all -v
+
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: radar.db
+          key: radar-db-${{ github.run_id }}
