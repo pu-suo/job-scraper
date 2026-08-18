@@ -71,9 +71,14 @@ Or read the token off the company's apply-button URL:
 
 1. Install the ntfy app (iOS/Android)
 2. Subscribe to a long random topic, e.g. `intern-radar-8f3k2n9qx4`
-3. Put the same string in `config.yaml` under `notify.ntfy.topic` and set `enabled: true`
+3. Export the same string — **don't put it in `config.yaml`**:
 
-The topic string is your only secret — anyone who guesses it sees your alerts. Make it random.
+```bash
+export RADAR_NTFY_TOPIC='intern-radar-8f3k2n9qx4'
+python -m radar run -v
+```
+
+The topic string is your only secret — anyone who guesses it sees your alerts, so make it random. `config.yaml` is tracked by git, so in a public repo writing the topic there publishes it. Setting `RADAR_NTFY_TOPIC` (or `RADAR_DISCORD_WEBHOOK`) turns the channel on automatically and keeps the secret off disk. Put the same values in **Settings → Secrets → Actions** for the scheduled workflow.
 
 Discord, Slack, Telegram, email, and desktop are also supported; see `config.yaml`.
 
@@ -84,7 +89,7 @@ Discord, Slack, Telegram, email, and desktop are also supported; see `config.yam
 Latency is the entire product, so where you run it matters:
 
 - **Best — always-on machine.** A $5/mo VPS, a Raspberry Pi, or an old laptop: `python -m radar watch` gives you the real 3-minute hot loop. Wrap it in `systemd` or `tmux` so it survives reboots.
-- **Free fallback — GitHub Actions.** `.github/workflows/radar.yml` is included. Push to a **private** repo, add `RADAR_NTFY_TOPIC` (and/or `RADAR_DISCORD_WEBHOOK`) as repo secrets. Caveat: GitHub's cron minimum is 5 minutes and is routinely delayed 5–15 more under load, so treat this as backup, not the fast path.
+- **Free fallback — GitHub Actions.** `.github/workflows/radar.yml` is included; add `RADAR_NTFY_TOPIC` (and/or `RADAR_DISCORD_WEBHOOK`) as repo secrets. Two caveats. GitHub's cron minimum is 5 minutes and is routinely delayed 5–15 more under load, so this is backup, not the fast path. And the billing asymmetry matters: Actions minutes are **free and unlimited on public repos**, while a private repo gets 2,000 minutes/month — a `*/5` cron burns roughly 8,600, so on a private repo you'd need to slow the schedule to about every 30 minutes to stay inside the free tier.
 - **Laptop-only** works but only catches postings while you're awake and open — which is most of them, since recruiters publish during business hours.
 
 ---
@@ -150,14 +155,14 @@ radar/matching.py   role/year classifier      (50 unit tests)
 radar/sources.py    13 ATS adapters           (25 tests against captured payloads)
 radar/engine.py     two-lane scheduler, dedupe, notification routing (15 tests)
 radar/store.py      SQLite dedupe + board health (17 tests)
-radar/notify.py     ntfy / Discord / Slack / Telegram / email / desktop
+radar/notify.py     ntfy / Discord / Slack / Telegram / email / desktop (15 tests)
 radar/cli.py        run · watch · verify · discover · doctor · list · applied · test
 companies.yaml      162 boards (138 live, 24 documented as dead)
 config.yaml         filters, cadence, notification channels
 ```
 
 ```bash
-python -m pytest tests/ -q     # 107 passed
+python -m pytest tests/ -q     # 125 passed
 ```
 
 The suite is fully offline — adapters are tested against captured payload shapes through `httpx.MockTransport` — so it never fails because a job board is down.

@@ -175,10 +175,31 @@ CHANNELS = {
 }
 
 
+def apply_env_overrides(notify_cfg: dict) -> dict:
+    """
+    Let secrets come from the environment instead of config.yaml.
+
+    config.yaml is tracked by git, so writing your ntfy topic into it
+    publishes the one string that protects your alerts. Export
+    RADAR_NTFY_TOPIC / RADAR_DISCORD_WEBHOOK instead and the channel turns
+    itself on with nothing sensitive on disk.
+    """
+    cfg = dict(notify_cfg)
+    topic = os.environ.get("RADAR_NTFY_TOPIC")
+    if topic:
+        cfg["ntfy"] = {**(cfg.get("ntfy") or {}), "enabled": True, "topic": topic}
+    hook = os.environ.get("RADAR_DISCORD_WEBHOOK")
+    if hook:
+        cfg["discord"] = {**(cfg.get("discord") or {}), "enabled": True,
+                          "webhook_url": hook}
+    return cfg
+
+
 def dispatch(notify_cfg: dict, postings: Sequence[dict], urgent: bool) -> list[str]:
     """Fire every enabled channel. Returns names of channels that errored."""
     if not postings:
         return []
+    notify_cfg = apply_env_overrides(notify_cfg)
     errors = []
     for name, fn in CHANNELS.items():
         cfg = notify_cfg.get(name) or {}

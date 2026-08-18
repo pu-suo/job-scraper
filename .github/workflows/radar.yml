@@ -40,26 +40,14 @@ jobs:
           key: radar-db-${{ github.run_id }}
           restore-keys: radar-db-
 
+      # Secrets are read straight from the environment - nothing sensitive is
+      # ever written to config.yaml, which matters because this repo is public.
       - name: Poll
         env:
           RADAR_SMTP_PASSWORD: ${{ secrets.RADAR_SMTP_PASSWORD }}
           RADAR_NTFY_TOPIC: ${{ secrets.RADAR_NTFY_TOPIC }}
           RADAR_DISCORD_WEBHOOK: ${{ secrets.RADAR_DISCORD_WEBHOOK }}
-        run: |
-          # Inject secrets into config so nothing sensitive is committed.
-          python - <<'PY'
-          import os, yaml
-          c = yaml.safe_load(open("config.yaml"))
-          n = c.setdefault("notify", {})
-          if os.environ.get("RADAR_NTFY_TOPIC"):
-              n.setdefault("ntfy", {}).update(
-                  enabled=True, topic=os.environ["RADAR_NTFY_TOPIC"])
-          if os.environ.get("RADAR_DISCORD_WEBHOOK"):
-              n.setdefault("discord", {}).update(
-                  enabled=True, webhook_url=os.environ["RADAR_DISCORD_WEBHOOK"])
-          yaml.safe_dump(c, open("config.yaml", "w"), sort_keys=False)
-          PY
-          python -m radar run --lane all -v
+        run: python -m radar run --lane all -v
 
       - name: Save state
         if: always()
