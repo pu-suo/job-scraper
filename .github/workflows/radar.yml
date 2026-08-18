@@ -2,12 +2,29 @@ name: intern radar
 
 # GitHub's cron minimum is 5 minutes and it is frequently delayed by 5-15
 # minutes under load, so this is your *fallback*, not your fast path. For
-# true 3-minute latency run `python -m radar watch` on an always-on machine
-# (a $5 VPS, a Raspberry Pi, or an old laptop in a drawer).
+# true 3-minute latency run `python -m radar watch` on an always-on machine.
+#
+# COST NOTE: Actions minutes are free and unlimited on PUBLIC repos. A private
+# repo on the Free plan gets 2,000 minutes/month, and each run here bills at
+# 1 minute (jobs are billed rounded up). So on a private repo:
+#     */5  -> ~8,600 min/month  (4x over the free tier)
+#     */15 -> ~2,900 min/month  (over)
+#     */30 -> ~1,440 min/month  (fits)
+# Change the cron below to match whichever you pick.
 on:
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
+    inputs:
+      notify:
+        description: "Send notifications (uncheck to silently seed the dedupe DB)"
+        type: boolean
+        default: true
+      lane:
+        description: "Which lane to poll"
+        type: choice
+        options: [all, hot, cold]
+        default: all
 
 concurrency:
   group: radar
@@ -30,9 +47,9 @@ jobs:
 
       - run: pip install -r requirements.txt
 
-      # Restore the dedupe DB so you don't get re-notified about every
-      # posting on every run. Without this the first run of each cycle
-      # would re-alert on all ~100 live postings.
+      # Restore the dedupe DB so you don't get re-notified about every posting
+      # on every run. Without this each run would re-alert on all ~100 live
+      # postings. Cache entries are per-run-id, newest matching prefix wins.
       - name: Restore state
         uses: actions/cache/restore@v4
         with:
@@ -41,13 +58,20 @@ jobs:
           restore-keys: radar-db-
 
       # Secrets are read straight from the environment - nothing sensitive is
-      # ever written to config.yaml, which matters because this repo is public.
+      # ever written to config.yaml, which is tracked by git.
       - name: Poll
         env:
           RADAR_SMTP_PASSWORD: ${{ secrets.RADAR_SMTP_PASSWORD }}
           RADAR_NTFY_TOPIC: ${{ secrets.RADAR_NTFY_TOPIC }}
           RADAR_DISCORD_WEBHOOK: ${{ secrets.RADAR_DISCORD_WEBHOOK }}
-        run: python -m radar run --lane all -v
+        run: |
+          python -m radar run \
+            --lane "${{ inputs.lane || 'all' }}" \
+            ${{ inputs.notify == false && '--no-notify' || '' }} -v
+
+      - name: Board health
+        if: always()
+        run: python -m radar doctor
 
       - name: Save state
         if: always()
